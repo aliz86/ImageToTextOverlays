@@ -1,31 +1,37 @@
+//
+//  ProcessedImageView.swift
+//  Translation Project
+//
+//  Created by Ali on 12/29/24.
+//
+
+
 import SwiftUI
 
 struct ProcessedImageView: View {
-    let processedImage: UIImage
     let originalImage: UIImage?
-
-    @State private var showOriginal = false
+    let processedImage: UIImage?
 
     var body: some View {
         VStack {
-            Image(uiImage: processedImage)
-                .resizable()
-                .scaledToFit()
-                .padding()
-
-            Button("Show Original Image") {
-                showOriginal.toggle()
+            if let processedImage = processedImage {
+                Image(uiImage: processedImage)
+                    .resizable()
+                    .scaledToFit()
+                    .padding()
             }
-            .sheet(isPresented: $showOriginal) {
-                if let originalImage = originalImage {
-                    Image(uiImage: originalImage)
-                        .resizable()
-                        .scaledToFit()
-                        .padding()
-                } else {
-                    Text("Original image not available.")
-                }
+            
+            Text("Original Image")
+                .font(.headline)
+                .padding(.top)
+            
+            if let originalImage = originalImage {
+                Image(uiImage: originalImage)
+                    .resizable()
+                    .scaledToFit()
+                    .padding()
             }
         }
+        .navigationTitle("Processed Image")
     }
 }

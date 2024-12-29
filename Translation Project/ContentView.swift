@@ -6,81 +6,85 @@
 //
 
 import SwiftUI
-import CoreData
 
 struct ContentView: View {
-    @Environment(\.managedObjectContext) private var viewContext
-
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
-        animation: .default)
-    private var items: FetchedResults<Item>
+    @StateObject private var viewModel = ImageProcessorViewModel()
+    @State private var isImagePickerPresented: Bool = false
 
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
-                    } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
+            ZStack {
+                VStack {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.black, lineWidth: 2)
+
+                        if let selectedImage = viewModel.selectedImage {
+                            Image(uiImage: selectedImage)
+                                .resizable()
+                                
+                                .aspectRatio(contentMode: .fit)
+                                //.scaledToFit()
+                                //.frame(width: 300, height: 300)
+                                .padding(1)
+                                .cornerRadius(16)
+                        } else {
+                            VStack {
+                                Image(systemName: "photo")
+                                    .resizable()
+                                    .frame(width: 50, height: 50)
+                                    .foregroundColor(.gray)
+                                Text("Select the Image")
+                                    .font(.headline)
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    }
+                    .onTapGesture {
+                        isImagePickerPresented.toggle()
+                    }
+                    .sheet(isPresented: $isImagePickerPresented) {
+                        ImagePicker(image: $viewModel.selectedImage)
+                    }
+
+                    if let processedImage = viewModel.processedImage {
+                        NavigationLink(
+                            destination: ProcessedImageView(
+                                originalImage: viewModel.selectedImage,
+                                processedImage: processedImage
+                            ),
+                            isActive: $viewModel.showProcessedView
+                        ) {
+                            EmptyView()
+                        }
+                        .hidden()
+                    }
+
+                    if viewModel.selectedImage != nil {
+                        Button("Process Image") {
+                            viewModel.processImage()
+                        }
+                        .foregroundColor(.white)
+                        .padding(10)
+                        .background(LinearGradient(gradient: Gradient(colors: [Color.blue, Color.purple]), startPoint: .leading, endPoint: .trailing)) .cornerRadius(15) .shadow(radius: 10)
+                    
+                        .disabled(viewModel.isProcessing)
+                        
                     }
                 }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
+
+                // Loading Indicator Overlay
+                if viewModel.isProcessing {
+                    Color.black.opacity(0.4)
+                        .edgesIgnoringSafeArea(.all)
+                    
+                    ProgressView("Processing...")
+                        .foregroundColor(.white)
+                        .scaleEffect(1.5)
+                        .padding()
+                        
                 }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
             }
-            Text("Select an item")
+            .padding()
+            .navigationTitle("Image Processor")
         }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            offsets.map { items[$0] }.forEach(viewContext.delete)
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
-    }
-}
-
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
-    return formatter
-}()
-
-#Preview {
-    ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }
