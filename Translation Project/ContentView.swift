@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var isImagePickerPresented: Bool = false
 
     var body: some View {
+        NavigationStack {
             ZStack {
                 VStack {
                     ZStack {
@@ -21,10 +22,7 @@ struct ContentView: View {
                         if let selectedImage = viewModel.selectedImage {
                             Image(uiImage: selectedImage)
                                 .resizable()
-                                
                                 .aspectRatio(contentMode: .fit)
-                                //.scaledToFit()
-                                //.frame(width: 300, height: 300)
                                 .padding(1)
                                 .cornerRadius(16)
                         } else {
@@ -49,29 +47,34 @@ struct ContentView: View {
                         NetworkMonitor.shared.startMonitoring()
                     }
 
+                    // Processed Image NavigationLink using NavigationLink(value:processedImage)
                     if let processedImage = viewModel.processedImage {
-                        NavigationLink(
-                            destination: ProcessedImageView(
-                                originalImage: viewModel.selectedImage,
-                                processedImage: processedImage
-                            ),
-                            isActive: $viewModel.showProcessedView
-                        ) {
-                            EmptyView()
+                        NavigationLink(value: processedImage) {
+                            ProcessedImageView(processedImage: processedImage, originalImage: viewModel.selectedImage!)
                         }
-                        .hidden()
+                        //.hidden()
+                        .onAppear {
+                                print("NavigationLink created with processedImage: \(processedImage)")
+                            }
                     }
 
+                    // Process Image Button
                     if viewModel.selectedImage != nil {
                         Button("Process Image") {
                             viewModel.processImage()
                         }
                         .foregroundColor(.white)
                         .padding(10)
-                        .background(LinearGradient(gradient: Gradient(colors: [Color.blue, Color.purple]), startPoint: .leading, endPoint: .trailing)) .cornerRadius(15) .shadow(radius: 10)
-                    
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color.blue, Color.purple]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(15)
+                        .shadow(radius: 10)
                         .disabled(viewModel.isProcessing)
-                        
                     }
                 }
 
@@ -79,15 +82,21 @@ struct ContentView: View {
                 if viewModel.isProcessing {
                     Color.black.opacity(0.4)
                         .edgesIgnoringSafeArea(.all)
-                    
+
                     ProgressView("Processing...")
                         .foregroundColor(.white)
                         .scaleEffect(1.5)
                         .padding()
-                        
                 }
+            }
+            .navigationDestination(for: UIImage.self) { processedImage in
+                ImageComparisonView(
+                    originalImage: viewModel.selectedImage!,
+                    processedImage: processedImage
+                )
             }
             .padding()
             .navigationTitle("Image Processor")
         }
+    }
 }

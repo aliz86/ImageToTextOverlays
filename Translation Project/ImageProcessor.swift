@@ -10,8 +10,6 @@ import Foundation
 import UIKit
 
 class ImageProcessor {
-    
-    /// API Key for Google Cloud Vision API
     private let apiKey = "AIzaSyCj6EZSWC77BzACS0WpH5djMwaAXc_tsCw"
     
     func processImage(image: UIImage, completion: @escaping (Result<UIImage, Error>) -> Void) {
@@ -23,8 +21,7 @@ class ImageProcessor {
         let base64String = imageData.base64EncodedString()
         sendToServer(base64: base64String, completion: completion)
     }
-
-    /// Send Base64 image to Google Cloud Vision API and get the processed response
+    
     func sendToServer(base64: String, completion: @escaping (Result<UIImage, Error>) -> Void) {
         guard let url = URL(string: "https://vision.googleapis.com/v1/images:annotate?key=\(apiKey)") else {
             completion(.failure(NSError(domain: "Invalid URL", code: 0, userInfo: nil)))
@@ -59,16 +56,9 @@ class ImageProcessor {
 
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
-                print("Network error: \(error.localizedDescription)")
                 completion(.failure(error))
-                        return
-                    }
-                    if let httpResponse = response as? HTTPURLResponse {
-                        print("HTTP Status Code: \(httpResponse.statusCode)")
-                    }
-                    if let data = data {
-                        print("Response Data: \(String(data: data, encoding: .utf8) ?? "Invalid Response")")
-                    }
+                return
+            }
 
             guard let data = data else {
                 completion(.failure(NSError(domain: "No Data", code: 0, userInfo: nil)))
@@ -85,7 +75,6 @@ class ImageProcessor {
                     return
                 }
 
-                // Process annotations and draw bounding boxes
                 if let processedImage = self.processAnnotations(annotations: annotations, base64: base64) {
                     completion(.success(processedImage))
                 } else {
@@ -99,7 +88,6 @@ class ImageProcessor {
         task.resume()
     }
 
-    /// Process annotations and draw bounding boxes on the original image
     private func processAnnotations(annotations: [[String: Any]], base64: String) -> UIImage? {
         guard let imageData = Data(base64Encoded: base64),
               let selectedImage = UIImage(data: imageData) else {
@@ -111,11 +99,10 @@ class ImageProcessor {
 
         guard let context = UIGraphicsGetCurrentContext() else { return nil }
 
-        for annotation in annotations {
-            if
-                let boundingPoly = annotation["boundingPoly"] as? [String: Any],
-                let vertices = boundingPoly["vertices"] as? [[String: Any]]
-            {
+        // Skip the first annotation as it represents the entire detected text block
+        for annotation in annotations.dropFirst() {
+            if let boundingPoly = annotation["boundingPoly"] as? [String: Any],
+               let vertices = boundingPoly["vertices"] as? [[String: Any]] {
                 let points = vertices.compactMap { vertex in
                     CGPoint(
                         x: (vertex["x"] as? CGFloat) ?? 0,
@@ -124,18 +111,34 @@ class ImageProcessor {
                 }
 
                 if points.count == 4 {
-                    context.setStrokeColor(UIColor.white.cgColor)
-                    context.setLineWidth(2.0)
-                    context.stroke(CGRect(x: points[0].x, y: points[0].y, width: points[2].x - points[0].x, height: points[2].y - points[0].y))
+                    let rect = CGRect(
+                        x: points[0].x,
+                        y: points[0].y,
+                        width: points[2].x - points[0].x,
+                        height: points[2].y - points[0].y
+                    )
+                    
+                    // Draw semi-transparent white background
+                    context.setFillColor(UIColor.white.withAlphaComponent(0.7).cgColor)
+                    context.fill(rect)
 
-                    // Draw text inside bounding box
+                    // Draw black border
+                    context.setStrokeColor(UIColor.black.cgColor)
+                    context.setLineWidth(2.0)
+                    context.stroke(rect)
+
+                    // Draw text inside the rect
                     if let description = annotation["description"] as? String {
-                        let font = UIFont.systemFont(ofSize: 12)
+                        let fontSize = min(rect.height * 0.8, 16) // Scale font size to fit
+                        let font = UIFont.systemFont(ofSize: fontSize)
                         let attributes: [NSAttributedString.Key: Any] = [
                             .font: font,
                             .foregroundColor: UIColor.black
                         ]
-                        description.draw(in: CGRect(x: points[0].x, y: points[0].y, width: points[2].x - points[0].x, height: points[2].y - points[0].y), withAttributes: attributes)
+
+                        let attributedString = NSAttributedString(string: description, attributes: attributes)
+                        let textRect = rect.insetBy(dx: 4, dy: 4) // Add padding for text
+                        attributedString.draw(in: textRect)
                     }
                 }
             }

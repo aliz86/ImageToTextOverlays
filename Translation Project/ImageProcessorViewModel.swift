@@ -19,6 +19,7 @@ class ImageProcessorViewModel: ObservableObject {
     func processImage() {
         guard let image = selectedImage else { return }
         isProcessing = true
+        print("Processing image...")
 
         processor.processImage(image: image) { [weak self] result in
             DispatchQueue.main.async {
@@ -26,7 +27,7 @@ class ImageProcessorViewModel: ObservableObject {
                 switch result {
                 case .success(let processedImage):
                     self?.processedImage = processedImage
-                    self?.showProcessedView = true
+                    print("Processed image: \(processedImage)")
                 case .failure(let error):
                     print("Error: \(error.localizedDescription)")
                 }
