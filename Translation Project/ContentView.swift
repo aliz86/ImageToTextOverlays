@@ -45,6 +45,9 @@ struct ContentView: View {
                     .sheet(isPresented: $isImagePickerPresented) {
                         ImagePicker(image: $viewModel.selectedImage)
                     }
+                    .onAppear {
+                        NetworkMonitor.shared.startMonitoring()
+                    }
 
                     if let processedImage = viewModel.processedImage {
                         NavigationLink(
