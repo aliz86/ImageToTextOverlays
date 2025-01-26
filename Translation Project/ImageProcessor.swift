@@ -95,7 +95,7 @@ class ImageProcessor {
         }
 
         UIGraphicsBeginImageContextWithOptions(selectedImage.size, false, 0.0)
-        selectedImage.draw(at: .zero)
+        selectedImage.draw(at: .zero) // Draw the original image first
 
         guard let context = UIGraphicsGetCurrentContext() else { return nil }
 
@@ -103,6 +103,8 @@ class ImageProcessor {
         for annotation in annotations.dropFirst() {
             if let boundingPoly = annotation["boundingPoly"] as? [String: Any],
                let vertices = boundingPoly["vertices"] as? [[String: Any]] {
+                
+                // Calculate the bounding box coordinates
                 let points = vertices.compactMap { vertex in
                     CGPoint(
                         x: (vertex["x"] as? CGFloat) ?? 0,
@@ -111,41 +113,64 @@ class ImageProcessor {
                 }
 
                 if points.count == 4 {
+                    // Bounding box for the detected word
                     let rect = CGRect(
                         x: points[0].x,
                         y: points[0].y,
                         width: points[2].x - points[0].x,
                         height: points[2].y - points[0].y
                     )
-                    
-                    // Draw semi-transparent white background
-                    context.setFillColor(UIColor.white.withAlphaComponent(0.7).cgColor)
-                    context.fill(rect)
 
-                    // Draw black border
+                    // Only draw a background for detected words (no global fill)
+                    context.setFillColor(UIColor(white: 1.0, alpha: 0.7).cgColor)
+                    context.fill(rect) // Fill only the word bounding box
+
+                    // Draw the bounding box outline (black color) around the word
                     context.setStrokeColor(UIColor.black.cgColor)
                     context.setLineWidth(2.0)
                     context.stroke(rect)
 
-                    // Draw text inside the rect
+                    // Draw the detected text inside the bounding box
                     if let description = annotation["description"] as? String {
-                        let fontSize = min(rect.height * 0.8, 16) // Scale font size to fit
+                        // Adjust font size to fit the bounding box height, but ensure it scales correctly with width too
+                        let maxFontSize = rect.height // Max possible font size based on the height
+                        var fontSize = maxFontSize
+                        var textSize: CGSize = .zero
+
+                        // Adjust font size to ensure the text fits inside the bounding box
+                        repeat {
+                            let font = UIFont.systemFont(ofSize: fontSize)
+                            let attributes: [NSAttributedString.Key: Any] = [
+                                .font: font,
+                                .foregroundColor: UIColor.black
+                            ]
+                            textSize = description.size(withAttributes: attributes)
+                            fontSize -= 1
+                        } while (textSize.width > rect.width || textSize.height > rect.height) && fontSize > 5 // Ensure text fits both width and height
+
+                        // Draw the text inside the bounding box, centered
                         let font = UIFont.systemFont(ofSize: fontSize)
                         let attributes: [NSAttributedString.Key: Any] = [
                             .font: font,
                             .foregroundColor: UIColor.black
                         ]
-
                         let attributedString = NSAttributedString(string: description, attributes: attributes)
-                        let textRect = rect.insetBy(dx: 4, dy: 4) // Add padding for text
+                        let textRect = CGRect(
+                            x: rect.origin.x + (rect.width - textSize.width) / 2,
+                            y: rect.origin.y + (rect.height - textSize.height) / 2,
+                            width: textSize.width,
+                            height: textSize.height
+                        )
                         attributedString.draw(in: textRect)
                     }
                 }
             }
         }
 
+        // Get the final processed image
         let processedImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         return processedImage
     }
+
 }
