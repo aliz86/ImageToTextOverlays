@@ -1,57 +1,64 @@
-//
-//  ProcessedImageView.swift
-//  Translation Project
-//
-//  Created by Ali on 12/29/24.
-//
-
-
 import SwiftUI
 
 struct ProcessedImageView: View {
-    let processedImage: UIImage
-    let originalImage: UIImage
-    @State private var showOriginalImage = false
+    var processedImage: UIImage
+    var originalImage: UIImage
+
+    @State private var scale: CGFloat = 1.0
+    @State private var lastScale: CGFloat = 1.0
+    @State private var offset: CGSize = .zero
+    @State private var lastOffset: CGSize = .zero
+
+
 
     var body: some View {
-        ZStack {
-            // Processed Image (fills the screen)
-            Image(uiImage: processedImage)
-                .resizable()
-                .scaledToFit()
-                .edgesIgnoringSafeArea(.all)
-
-            // Bottom Sheet for Original Image
-            GeometryReader { geometry in
+        NavigationView { // Use NavigationView for top bar
+            ZStack {
+                // Original image that users can zoom and pan
                 VStack {
-                    if showOriginalImage {
-                        Image(uiImage: originalImage)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: geometry.size.height * 0.7) // Adjust as needed
-                    } else {
-                        Text("Original Image")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                    }
+                    Text("Original Image")
+                        .font(.title)
+                        .padding()
+                        .background(Color.white.opacity(0.7), in: RoundedRectangle(cornerRadius: 16))
+
+                    Image(uiImage: processedImage)
+                        .resizable()
+                        .scaledToFit()
+                        .scaleEffect(scale)
+                        .offset(offset)
+                        .clipped() // Important: Clips the image to its frame to prevent it from going off-screen
+                        .gesture(
+                            MagnificationGesture()
+                                .onChanged { value in
+                                    let delta = value / lastScale
+                                    scale = scale * delta // Smooth scaling
+                                    lastScale = value
+                                }
+                                .onEnded { _ in
+                                    lastScale = 1.0
+                                    scale = min(max(scale, 1), 3) // Limit zoom
+                                }
+                        )
+                        .simultaneousGesture( // Combine with drag gesture
+                            DragGesture()
+                                .onChanged { value in
+                                    let deltaX = value.translation.width - lastOffset.width
+                                    let deltaY = value.translation.height - lastOffset.height
+                                    offset = CGSize(width: offset.width + deltaX, height: offset.height + deltaY)
+                                    lastOffset = value.translation
+                                }
+                                .onEnded { _ in
+                                    lastOffset = .zero
+                                }
+                        )
+                        
+                    Spacer()
                 }
-                .frame(maxWidth: .infinity)
-                .background(Color.black.opacity(0.8))
+                .background(Color.white.opacity(0.7))
                 .cornerRadius(16)
-                .padding(.horizontal)
-                .offset(y: showOriginalImage ? geometry.size.height * 0.1 : geometry.size.height * 0.7)
-                .animation(.spring(), value: showOriginalImage)
+                .padding()
             }
-        }
-        .gesture(
-            DragGesture()
-                .onEnded { value in
-                    if value.translation.height < 0 {
-                        showOriginalImage = true
-                    } else if value.translation.height > 0 {
-                        showOriginalImage = false
-                    }
-                }
-        )
+            .navigationTitle("Processed Image") // Set navigation title
+        } // End of NavigationView
     }
 }

@@ -4,12 +4,14 @@
 //
 //  Created by Ali on 12/29/24.
 //
-
 import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = ImageProcessorViewModel()
     @State private var isImagePickerPresented: Bool = false
+    @State private var navigateToPage2 = false
+    @State private var isSheetExpanded = true  // State variable to control sheet expansion
+    @State private var sheetDetent: PresentationDetent = .fraction(0.14) // Start with the small detent
 
     var body: some View {
         NavigationStack {
@@ -47,21 +49,34 @@ struct ContentView: View {
                         NetworkMonitor.shared.startMonitoring()
                     }
 
-                    // Processed Image NavigationLink using NavigationLink(value:processedImage)
+                    // Processed Image NavigationLink using NavigationLink(value: processedImage)
                     if let processedImage = viewModel.processedImage {
-                        NavigationLink(value: processedImage) {
-                            ProcessedImageView(processedImage: processedImage, originalImage: viewModel.selectedImage!)
-                        }
-                        //.hidden()
-                        .onAppear {
-                                print("NavigationLink created with processedImage: \(processedImage)")
+                        VStack {}
+                            .sheet(isPresented: $navigateToPage2) {
+                                ProcessedImageView(processedImage: processedImage, originalImage: viewModel.selectedImage!)
+                                    .presentationDetents((isSheetExpanded || navigateToPage2) ? [.large] : [.fraction(0.14), .large])  // Control detent based on state
+                                    .presentationDragIndicator(.visible)
+                                    .interactiveDismissDisabled(false)
+                                    .onAppear {
+                                                                        // Expand to large detent when the sheet appears
+                                                                        sheetDetent = .large
+                                                                    }
                             }
+                            .onAppear {
+                                DispatchQueue.global().asyncAfter(deadline: .now()) {
+                                    DispatchQueue.main.async {
+                                        navigateToPage2.toggle()
+                                    }
+                                }
+                            }
+                            
                     }
 
                     // Process Image Button
                     if viewModel.selectedImage != nil {
                         Button("Process Image") {
                             viewModel.processImage()
+                            isSheetExpanded = false  // Make the sheet contract after the image is processed
                         }
                         .foregroundColor(.white)
                         .padding(10)
