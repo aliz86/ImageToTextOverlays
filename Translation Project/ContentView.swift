@@ -29,9 +29,11 @@ struct ContentView: View {
                                 .cornerRadius(16)
                         } else {
                             VStack {
-                                Image(systemName: "photo")
+                                Image("background1")
                                     .resizable()
-                                    .frame(width: 50, height: 50)
+                                    .padding(4)
+                                    .aspectRatio(contentMode: .fit)
+                                    //.frame(width: 50, height: 50)
                                     .foregroundColor(.gray)
                                 Text("Select the Image")
                                     .font(.headline)
@@ -58,9 +60,9 @@ struct ContentView: View {
                                     .presentationDragIndicator(.visible)
                                     .interactiveDismissDisabled(false)
                                     .onAppear {
-                                                                        // Expand to large detent when the sheet appears
-                                                                        sheetDetent = .large
-                                                                    }
+                                            // Expand to large detent when the sheet appears
+                                            sheetDetent = .large
+                                        }
                             }
                             .onAppear {
                                 DispatchQueue.global().asyncAfter(deadline: .now()) {
@@ -111,7 +113,7 @@ struct ContentView: View {
                 )
             }
             .padding()
-            .navigationTitle("Image Processor")
+            //.navigationTitle("Image Processor")
         }
     }
 }
