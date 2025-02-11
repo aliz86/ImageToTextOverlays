@@ -14,19 +14,24 @@ struct ProcessedImageView: View {
     var body: some View {
         NavigationView { // Use NavigationView for top bar
             ZStack {
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.green, lineWidth: 2)
                 // Original image that users can zoom and pan
                 VStack {
-                    Text("Original Image")
-                        .font(.title)
-                        .padding()
-                        .background(Color.white.opacity(0.7), in: RoundedRectangle(cornerRadius: 16))
+                    //Text("Processed Image")
+                     //   .font(.title)
+                        //.padding()
+                      //  .background(Color.white.opacity(0.7), in: RoundedRectangle(cornerRadius: 16))
 
                     Image(uiImage: processedImage)
                         .resizable()
-                        .scaledToFit()
+                        //.scaledToFit()
                         .scaleEffect(scale)
                         .offset(offset)
-                        .clipped() // Important: Clips the image to its frame to prevent it from going off-screen
+                        .aspectRatio(contentMode: .fit)
+                        .padding(1)
+                        .cornerRadius(16)
+                        //.clipped() // Important: Clips the image to its frame to prevent it from going off-screen
                         .gesture(
                             MagnificationGesture()
                                 .onChanged { value in
@@ -52,13 +57,17 @@ struct ProcessedImageView: View {
                                 }
                         )
                         
-                    Spacer()
+                    //Spacer()
                 }
+                
                 .background(Color.white.opacity(0.7))
                 .cornerRadius(16)
-                .padding()
+            
+                    
+                
             }
-            .navigationTitle("Processed Image") // Set navigation title
+            .padding()
+            //.navigationTitle("Processed Image") // Set navigation title
         } // End of NavigationView
     }
 }
