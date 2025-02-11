@@ -1,3 +1,11 @@
+//
+//  ZoomableModifier.swift
+//  Translation Project
+//
+//  Created by Ali on 2/11/25.
+//
+
+
 import SwiftUI
 
 struct ZoomableModifier: ViewModifier {

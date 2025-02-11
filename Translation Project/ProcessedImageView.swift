@@ -23,45 +23,21 @@ struct ProcessedImageView: View {
                         //.padding()
                       //  .background(Color.white.opacity(0.7), in: RoundedRectangle(cornerRadius: 16))
 
-                    Image(uiImage: processedImage)
-                        .resizable()
-                        //.scaledToFit()
-                        .scaleEffect(scale)
-                        .offset(offset)
-                        .aspectRatio(contentMode: .fit)
-                        .padding(1)
-                        .cornerRadius(16)
-                        //.clipped() // Important: Clips the image to its frame to prevent it from going off-screen
-                        .gesture(
-                            MagnificationGesture()
-                                .onChanged { value in
-                                    let delta = value / lastScale
-                                    scale = scale * delta // Smooth scaling
-                                    lastScale = value
-                                }
-                                .onEnded { _ in
-                                    lastScale = 1.0
-                                    scale = min(max(scale, 1), 3) // Limit zoom
-                                }
-                        )
-                        .simultaneousGesture( // Combine with drag gesture
-                            DragGesture()
-                                .onChanged { value in
-                                    let deltaX = value.translation.width - lastOffset.width
-                                    let deltaY = value.translation.height - lastOffset.height
-                                    offset = CGSize(width: offset.width + deltaX, height: offset.height + deltaY)
-                                    lastOffset = value.translation
-                                }
-                                .onEnded { _ in
-                                    lastOffset = .zero
-                                }
-                        )
+                    Image(uiImage: processedImage) // Your image name in assets
+                                    .resizable()
+                                    .scaledToFit()
+                                    .zoomable(minZoomScale: 1, doubleTapZoomScale: 3) // Add the zoomable modifier
+                                    //.frame(width: 300, height: 300) // Customize the frame size
+                                    
+                                    .aspectRatio(contentMode: .fit)
+                                    .cornerRadius(16)
                         
                     //Spacer()
                 }
                 
                 .background(Color.white.opacity(0.7))
                 .cornerRadius(16)
+                .padding(2)
             
                     
                 
