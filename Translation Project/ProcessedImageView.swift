@@ -30,7 +30,7 @@ struct ProcessedImageView: View {
                                     //.frame(width: 300, height: 300) // Customize the frame size
                                     
                                     .aspectRatio(contentMode: .fit)
-                                    .cornerRadius(16)
+                                    //.cornerRadius(16)
                         
                     //Spacer()
                 }
@@ -40,7 +40,7 @@ struct ProcessedImageView: View {
                 .padding(2)
                 
             }
-            .padding()
+            .padding(.horizontal)
             //.navigationTitle("Processed Image") // Set navigation title
         } // End of NavigationView
     }
