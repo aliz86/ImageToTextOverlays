@@ -54,7 +54,7 @@ struct ContentView: View {
                             .padding(4)
                             .aspectRatio(contentMode: .fit)
                             .foregroundColor(.gray)
-                        Text("Select the Image")
+                        Text("Select the Image to translate")
                             .font(.headline)
                             .foregroundColor(.gray)
                     }
