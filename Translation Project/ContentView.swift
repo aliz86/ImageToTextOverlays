@@ -14,19 +14,16 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var viewModel = ImageProcessorViewModel()
     @State private var isImagePickerPresented = false
-    // Remove unused state variables
-    // @State private var isSheetExpanded = true
-    // @State private var sheetDetent: PresentationDetent = .fraction(0.14)
-    
+    @State private var navigationLinkActive = false // For activating NavigationLink
+
     var body: some View {
         NavigationStack {
             ZStack {
                 VStack {
                     imageSelectionView
-                    processedImageLink
-                    processButton
+                    processAndViewButton
                 }
-                
+
                 if viewModel.isProcessing {
                     loadingOverlay
                 }
@@ -64,40 +61,46 @@ struct ContentView: View {
             isImagePickerPresented.toggle()
         }
         .sheet(isPresented: $isImagePickerPresented) {
-            ImagePicker(image: $viewModel.selectedImage)
+            ImagePicker(image: $viewModel.selectedImage, viewModel: viewModel)
         }
     }
     
-    private var processedImageLink: some View {
-        Group {
-            if let processedImage = viewModel.processedImage {
-                NavigationLink(
-                    destination: ProcessedImageView(
-                        processedImage: processedImage,
-                        originalImage: viewModel.selectedImage!
-                    )
-                ) {
-                    Text("View Processed Image")
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                }
-            }
-        }
-    }
-    
-    private var processButton: some View {
-        Group {
+    private var processAndViewButton: some View {
+        Group { // Wrap in a Group to provide a consistent return type
             if viewModel.selectedImage != nil {
-                Button("Process Image") {
-                    viewModel.processImage()
+                NavigationLink(isActive: $navigationLinkActive) {
+                    if let processedImage = viewModel.processedImage,
+                       let originalImage = viewModel.selectedImage {  // Make sure both images are available
+                        ProcessedImageView(processedImage: processedImage, originalImage: originalImage)
+                    } else {
+                        // Show a placeholder or progress view while processing
+                        ProgressView("Processing...")  // Or Text("Processing...")
+                    }
+                } label: {
+                    Button(viewModel.processedImage == nil ? "Process Image" : "View Processed Image") {
+                        if viewModel.processedImage == nil {
+                            viewModel.processImage { success in // Completion handler to ensure processing finished
+                                if success { // if processed image available
+                                    navigationLinkActive = true
+                                }
+                            }
+
+
+                        } else {
+                            navigationLinkActive = true
+                        }
+                    }
+                    .buttonStyle(GradientButtonStyle())
+                    .disabled(viewModel.isProcessing)
                 }
-                .buttonStyle(GradientButtonStyle())
-                .disabled(viewModel.isProcessing)
+            } else {
+                 // Placeholder for when no image is selected
+                //Text("Select an image to begin.") // or another view
             }
         }
     }
+    
+ 
     
     private var loadingOverlay: some View {
         ZStack {

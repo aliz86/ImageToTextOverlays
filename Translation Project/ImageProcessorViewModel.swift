@@ -12,26 +12,35 @@ class ImageProcessorViewModel: ObservableObject {
     @Published var selectedImage: UIImage?
     @Published var processedImage: UIImage?
     @Published var isProcessing: Bool = false
-    @Published var showProcessedView: Bool = false
 
     private let processor = ImageProcessor()
 
-    func processImage() {
-        guard let image = selectedImage else { return }
+    func processImage(completion: @escaping (Bool) -> Void) { // Completion handler
+        guard let image = selectedImage else {
+            completion(false) // Call completion with false if no image
+            return
+        }
         isProcessing = true
-        print("Processing image...")
 
         processor.processImage(image: image) { [weak self] result in
             DispatchQueue.main.async {
                 self?.isProcessing = false
+
                 switch result {
                 case .success(let processedImage):
                     self?.processedImage = processedImage
-                    print("Processed image: \(processedImage)")
+                    completion(true) // Call completion with true on success
                 case .failure(let error):
-                    print("Error: \(error.localizedDescription)")
+                    print("Error processing image: \(error)")
+                    completion(false) // Call completion with false on failure
                 }
             }
         }
+    }
+    
+    func reset() {  // New function to reset the state
+        selectedImage = nil
+        processedImage = nil
+        isProcessing = false
     }
 }
