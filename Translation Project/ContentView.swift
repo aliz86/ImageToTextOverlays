@@ -5,10 +5,6 @@
 //  Created by Ali on 12/29/24.
 //
 //
-//  ContentView.swift
-//  Translation Project
-//
-
 import SwiftUI
 
 struct ContentView: View {
@@ -85,7 +81,6 @@ struct ContentView: View {
                                 }
                             }
 
-
                         } else {
                             navigationLinkActive = true
                         }
@@ -99,8 +94,6 @@ struct ContentView: View {
             }
         }
     }
-    
- 
     
     private var loadingOverlay: some View {
         ZStack {
