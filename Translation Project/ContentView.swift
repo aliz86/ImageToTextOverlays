@@ -10,7 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var viewModel = ImageProcessorViewModel()
     @State private var isImagePickerPresented = false
-    @State private var navigationLinkActive = false // For activating NavigationLink
+    @State private var showProcessedView = false // Use this to control navigation
 
     var body: some View {
         NavigationStack {
@@ -19,14 +19,22 @@ struct ContentView: View {
                     imageSelectionView
                     processAndViewButton
                 }
-
+                
                 if viewModel.isProcessing {
                     loadingOverlay
                 }
             }
             .padding()
-        }
-    }
+            .navigationDestination(isPresented: $showProcessedView) {
+                if let processedImage = viewModel.processedImage,
+                   let originalImage = viewModel.selectedImage {
+                    ProcessedImageView(processedImage: processedImage, originalImage: originalImage)
+                } else {
+                    // Handle the case where images aren't ready yet.  A ProgressView is usually best.
+                    ProgressView("Processing...")
+                }
+            }
+        }}
     
     // Break down into smaller views for better readability
     private var imageSelectionView: some View {
@@ -62,32 +70,22 @@ struct ContentView: View {
     }
     
     private var processAndViewButton: some View {
-        Group { // Wrap in a Group to provide a consistent return type
+        Group {
             if viewModel.selectedImage != nil {
-                NavigationLink(isActive: $navigationLinkActive) {
-                    if let processedImage = viewModel.processedImage,
-                       let originalImage = viewModel.selectedImage {  // Make sure both images are available
-                        ProcessedImageView(processedImage: processedImage, originalImage: originalImage)
-                    } else {
-                        // Show a placeholder or progress view while processing
-                        ProgressView("Processing...")  // Or Text("Processing...")
-                    }
-                } label: {
-                    Button(viewModel.processedImage == nil ? "Process Image" : "View Processed Image") {
-                        if viewModel.processedImage == nil {
-                            viewModel.processImage { success in // Completion handler to ensure processing finished
-                                if success { // if processed image available
-                                    navigationLinkActive = true
-                                }
+                Button(viewModel.processedImage == nil ? "Process Image" : "View Processed Image") {
+                    if viewModel.processedImage == nil {
+                        viewModel.processImage { success in
+                            if success {
+                                showProcessedView = true // Navigate after successful processing
                             }
-
-                        } else {
-                            navigationLinkActive = true
                         }
+                    } else {
+                        showProcessedView = true // Navigate directly if already processed
                     }
-                    .buttonStyle(GradientButtonStyle())
-                    .disabled(viewModel.isProcessing)
                 }
+                .buttonStyle(GradientButtonStyle())
+                .disabled(viewModel.isProcessing)
+                
             } else {
                  // Placeholder for when no image is selected
                 //Text("Select an image to begin.") // or another view
